@@ -5,7 +5,7 @@ Chunk::Chunk(Vector2i offset) : position(offset)
 	//Set up pixel array
 	Pixel empty;
 
-	for (int i = 0; i < GetArea(); i ++)
+	for (int i = 0; i < area; i ++)
 	{
 		pixels.push_back(empty);
 	}
@@ -14,7 +14,7 @@ Chunk::Chunk(Vector2i offset) : position(offset)
 void Chunk::Update(double delta)
 {
 	Sand sand;
-	SetPixel(sand, 40, 40);
+	SetPixel(sand, 40, 200);
 
 	ResetFrame();
 
@@ -31,19 +31,19 @@ void Chunk::Update(double delta)
 
 			if (p.properties & Pixel::Properties::MOVE_DOWN && IsEmpty(x, y + 1))
 			{
-				MovePixel(p, x, y, x, y + 1);
+				MovePixel(x, y, x, y + 1);
 			}
 			else if (p.properties & Pixel::Properties::MOVE_UP && IsEmpty(x, y - 1))
 			{
-				MovePixel(p, x, y, x, y - 1);
+				MovePixel(x, y, x, y - 1);
 			}
 			else if (p.properties & Pixel::Properties::MOVE_DIAGONAL && IsEmpty(x + dx, y + dy))
 			{
-				MovePixel(p, x, y, x + dx, y + dy);
+				MovePixel(x, y, x + dx, y + dy);
 			}
 			else if (p.properties & Pixel::Properties::MOVE_SIDE && IsEmpty(x + dx, y))
 			{
-				MovePixel(p, x, y, x + dx, y);
+				MovePixel(x, y, x + dx, y);
 			}
 		}
 }
@@ -59,30 +59,25 @@ void Chunk::Draw(Graphics* graphics)
 		}
 }
 
-const int& Chunk::GetSize()
-{
-	return size;
-}
-
-const int& Chunk::GetArea()
-{
-	return size * size;
-}
-
 const std::vector<Pixel>& Chunk::GetPixels()
 {
 	return pixels;
 }
 
-void Chunk::MovePixel(const Pixel& p, int x, int y, int xto, int yto)
+void Chunk::MovePixel(int x, int y, int xto, int yto)
 {
-	if(!InBounds(xto,yto))
-		return;
+	if (InBounds(xto, yto))
+	{
+		const Pixel& pixel = GetPixel(x, y);
+		const Pixel& origin = GetPixel(xto, yto);
 
-	const Pixel& origin = GetPixel(xto, yto);
-
-	SetPixel(p, xto, yto);
-	SetPixel(origin, x, y);
+		SetPixel(pixel, xto, yto);
+		SetPixel(origin, x, y);
+	}
+	else
+	{
+		//Find in neighbouring chunk
+	}
 }
 
 void Chunk::SetPixel(const Pixel& p, int x, int y)
@@ -98,7 +93,15 @@ Pixel Chunk::GetPixel(int x, int y)
 
 bool Chunk::IsEmpty(int x, int y)
 {
-	return InBounds(x,y) && GetPixel(x, y).properties == Pixel::Properties::EMPTY;
+	if (InBounds(x, y))
+	{
+		return GetPixel(x, y).properties == Pixel::Properties::EMPTY;
+	}
+	else
+	{
+		//Find in neighbouring chunk
+		return false;
+	}
 }
 
 bool Chunk::InBounds(int x, int y)

@@ -13,20 +13,19 @@ public:
 	void Update(double delta);
 	void Draw(Graphics* graphics);
 
-	const int& GetSize();
-	const int& GetArea();
 	const std::vector<Pixel>& GetPixels();
-
-	Vector2i position;
-private:
-	void MovePixel(const Pixel& p, int x, int  y, int xto, int yto);
+	void MovePixel(int x, int  y, int xto, int yto);
 	void SetPixel(const Pixel& p, int x, int y);
 	Pixel GetPixel(int x, int y);
 
+	static const int size = 256;
+	static const int area = size * size;
+	Vector2i position;
+private:
 	bool IsEmpty(int x, int y);
 	bool InBounds(int x, int y);
 	void ResetFrame();
-
-	const int size = 256;
+	
 	std::vector<Pixel> pixels;
+	std::vector<Chunk*> neighbours;
 };
