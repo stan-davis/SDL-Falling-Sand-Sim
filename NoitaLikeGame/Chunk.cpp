@@ -16,7 +16,7 @@ void Chunk::Update(double delta)
 	Sand sand;
 	SetPixel(sand, 40, 200);
 
-	ResetFrame();
+	ClearUpdateBuffer();
 
 	for (int x = 0; x < size; x++)
 		for (int y = 0; y < size; y++)
@@ -59,54 +59,81 @@ void Chunk::Draw(Graphics* graphics)
 		}
 }
 
-const std::vector<Pixel>& Chunk::GetPixels()
-{
-	return pixels;
-}
-
 void Chunk::MovePixel(int x, int y, int xto, int yto)
 {
-	const Pixel& pixel = GetPixel(x, y);
-	const Pixel& origin = GetPixel(xto, yto);
+	if (InBounds(xto, yto))
+	{
+		const Pixel& current = GetPixel(x, y);
+		const Pixel& destination = GetPixel(xto, yto);
 
-	SetPixel(pixel, xto, yto);
-	SetPixel(origin, x, y);
+		SetPixel(current, xto, yto);
+		SetPixel(destination, x, y);
+	}
+	else
+	{
+		if (Chunk* dst = GetNeighbour(xto, yto))
+		{
+			Vector2i to = dst->GetPixelChunkCoords(xto, yto);
+
+			const Pixel& current = GetPixel(x, y);
+			const Pixel& destination = dst->GetPixel(to.x, to.y);
+
+			dst->SetPixel(current, to.x, to.y);
+			SetPixel(destination, x, y);
+		}
+	}
 }
 
 void Chunk::SetPixel(const Pixel& p, int x, int y)
 {
-	if (InBounds(x, y))
-	{
-		pixels[y * size + x] = p;
-		pixels[y * size + x].updated = true;
-	}
-	else
-	{
-		//Is this position in a neighbour chunk?
-
-	}
+	pixels[y * size + x] = p;
+	pixels[y * size + x].updated = true;
 }
 
 Pixel Chunk::GetPixel(int x, int y)
 {
-	//Check in bounds
 	return pixels[y * size + x];
+}
+
+Vector2i Chunk::GetPixelChunkCoords(int x, int y)
+{
+	return { x - position.x , y - position.y };
 }
 
 void Chunk::SetNeighbour(Chunk* neighbour)
 {
 	if (neighbour != nullptr)
+	{
+		Vector2i position = { SDL_floor(neighbour->position.x / size), SDL_floor(neighbour->position.y / size) };
+		lookup.insert({ position, neighbour });
 		neighbours.push_back(neighbour);
+	}
 }
 
 Chunk* Chunk::GetNeighbour(int x, int y)
 {
-	return nullptr;
+	Vector2i position = { SDL_floor(x / size), SDL_floor(y / size) };;
+
+	auto itr = lookup.find(position);
+	auto end = lookup.end();
+
+	Chunk* chunk = itr != end ? itr->second : nullptr;
+
+	return chunk;
 }
 
 bool Chunk::IsEmpty(int x, int y)
 {
-	return GetPixel(x, y).properties == Pixel::Properties::EMPTY;
+	if (InBounds(x, y))
+		return GetPixel(x, y).properties == Pixel::Properties::EMPTY;
+	
+	if (Chunk* dst = GetNeighbour(x, y))
+	{
+		Vector2i to = dst->GetPixelChunkCoords(x, y);
+		return dst->GetPixel(to.x, to.y).properties == Pixel::Properties::EMPTY;
+	}
+
+	return false;
 }
 
 bool Chunk::InBounds(int x, int y)
@@ -114,7 +141,7 @@ bool Chunk::InBounds(int x, int y)
 	return x >= 0 && y >= 0 && x < size && y < size;
 }
 
-void Chunk::ResetFrame()
+void Chunk::ClearUpdateBuffer()
 {
 	for (auto& pixel : pixels)
 	{

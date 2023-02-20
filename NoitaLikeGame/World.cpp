@@ -63,9 +63,6 @@ void World::SetChunkNeighbours()
 {
 	for (auto& chunk : chunks)
 	{
-		if (chunk == nullptr)
-			continue;
-
 		Vector2i world_position = chunk->position;
 		world_position.x = SDL_floor(world_position.x / Chunk::size);
 		world_position.y = SDL_floor(world_position.y / Chunk::size);
@@ -75,8 +72,7 @@ void World::SetChunkNeighbours()
 			{
 				if (x == 0 && y == 0)
 					continue;
-
-				//this used to break bc vector resized during iteration
+				
 				chunk->SetNeighbour(GetChunk(x, y));
 			}
 	}
