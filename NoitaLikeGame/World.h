@@ -14,9 +14,9 @@ public:
 private:
 	Chunk* CreateChunk(int x, int y);
 	Chunk* GetChunk(int x, int y);
+	void SetChunkNeighbours();
 
-	const int size = 1024;
-	const int num_chunks = 2;
+	const int size = 2;
 
 	std::vector<Chunk*> chunks;
 	std::unordered_map<Vector2i, Chunk*> chunk_lookup;

@@ -3,11 +3,13 @@
 
 World::World()
 {
-	for(int x = 0; x < num_chunks; x++)
-		for (int y = 0; y < num_chunks; y++)
+	for(int x = 0; x < size; x++)
+		for (int y = 0; y < size; y++)
 		{
-			CreateChunk(x * Chunk::size, y * Chunk::size);
+			CreateChunk(x, y);
 		}
+
+	SetChunkNeighbours();
 }
 
 World::~World()
@@ -30,13 +32,13 @@ void World::Draw(Graphics* graphics)
 
 Chunk* World::CreateChunk(int x, int y)
 {
-	if (x <= -size || x > size || y <= -size || y > size)
+	if (x < 0 || x > size || y < 0 || y > size)
 		return nullptr;
 
 	Vector2i position = { x,y };
 	Chunk* chunk = new Chunk(position);
 	
-	chunk_lookup.insert({ position, chunk });
+	chunk_lookup.insert({ position, chunk});
 	chunks.push_back(chunk);
 
 	return chunk;
@@ -44,12 +46,38 @@ Chunk* World::CreateChunk(int x, int y)
 
 Chunk* World::GetChunk(int x, int y)
 {
-	Vector2i position = { SDL_floor(x / Chunk::size) * Chunk::size, SDL_floor(y / Chunk::size) * Chunk::size };
+	if (x < 0 || x > size || y < 0 || y > size)
+		return nullptr;
+
+	Vector2i position = { x, y };
 
 	auto itr = chunk_lookup.find(position);
 	auto end = chunk_lookup.end();
 
 	Chunk* chunk = itr != end ? itr->second : nullptr;
 
-	return chunk ? chunk : CreateChunk(position.x, position.y);
+	return chunk;
+}
+
+void World::SetChunkNeighbours()
+{
+	for (auto& chunk : chunks)
+	{
+		if (chunk == nullptr)
+			continue;
+
+		Vector2i world_position = chunk->position;
+		world_position.x = SDL_floor(world_position.x / Chunk::size);
+		world_position.y = SDL_floor(world_position.y / Chunk::size);
+
+		for(int x = world_position.x - 1; x <= world_position.x + 1; x++)
+			for (int y = world_position.y - 1; y <= world_position.y + 1; y++)
+			{
+				if (x == 0 && y == 0)
+					continue;
+
+				//this used to break bc vector resized during iteration
+				chunk->SetNeighbour(GetChunk(x, y));
+			}
+	}
 }

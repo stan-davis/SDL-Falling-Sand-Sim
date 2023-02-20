@@ -1,6 +1,6 @@
 #include "Chunk.h"
 
-Chunk::Chunk(Vector2i offset) : position(offset)
+Chunk::Chunk(Vector2i offset) : position({ offset.x * size, offset.y * size})
 {
 	//Set up pixel array
 	Pixel empty;
@@ -66,42 +66,47 @@ const std::vector<Pixel>& Chunk::GetPixels()
 
 void Chunk::MovePixel(int x, int y, int xto, int yto)
 {
-	if (InBounds(xto, yto))
-	{
-		const Pixel& pixel = GetPixel(x, y);
-		const Pixel& origin = GetPixel(xto, yto);
+	const Pixel& pixel = GetPixel(x, y);
+	const Pixel& origin = GetPixel(xto, yto);
 
-		SetPixel(pixel, xto, yto);
-		SetPixel(origin, x, y);
-	}
-	else
-	{
-		//Find in neighbouring chunk
-	}
+	SetPixel(pixel, xto, yto);
+	SetPixel(origin, x, y);
 }
 
 void Chunk::SetPixel(const Pixel& p, int x, int y)
 {
-	pixels[y * size + x] = p;
-	pixels[y * size + x].updated = true;
+	if (InBounds(x, y))
+	{
+		pixels[y * size + x] = p;
+		pixels[y * size + x].updated = true;
+	}
+	else
+	{
+		//Is this position in a neighbour chunk?
+
+	}
 }
 
 Pixel Chunk::GetPixel(int x, int y)
 {
+	//Check in bounds
 	return pixels[y * size + x];
+}
+
+void Chunk::SetNeighbour(Chunk* neighbour)
+{
+	if (neighbour != nullptr)
+		neighbours.push_back(neighbour);
+}
+
+Chunk* Chunk::GetNeighbour(int x, int y)
+{
+	return nullptr;
 }
 
 bool Chunk::IsEmpty(int x, int y)
 {
-	if (InBounds(x, y))
-	{
-		return GetPixel(x, y).properties == Pixel::Properties::EMPTY;
-	}
-	else
-	{
-		//Find in neighbouring chunk
-		return false;
-	}
+	return GetPixel(x, y).properties == Pixel::Properties::EMPTY;
 }
 
 bool Chunk::InBounds(int x, int y)
