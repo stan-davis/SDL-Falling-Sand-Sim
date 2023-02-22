@@ -64,8 +64,8 @@ void World::SetChunkNeighbours()
 	for (auto& chunk : chunks)
 	{
 		Vector2i world_position = chunk->position;
-		world_position.x = SDL_floor(world_position.x / Chunk::size);
-		world_position.y = SDL_floor(world_position.y / Chunk::size);
+		world_position.x = floor(static_cast<float>(world_position.x) / Chunk::size);
+		world_position.y = floor(static_cast<float>(world_position.y) / Chunk::size);
 
 		for(int x = world_position.x - 1; x <= world_position.x + 1; x++)
 			for (int y = world_position.y - 1; y <= world_position.y + 1; y++)

@@ -1,4 +1,5 @@
 #include "Chunk.h"
+#include <iostream>
 
 Chunk::Chunk(Vector2i offset) : position({ offset.x * size, offset.y * size})
 {
@@ -14,7 +15,7 @@ Chunk::Chunk(Vector2i offset) : position({ offset.x * size, offset.y * size})
 void Chunk::Update(double delta)
 {
 	Sand sand;
-	SetPixel(sand, 40, 200);
+	SetPixel(sand, 40, 50);
 
 	ClearUpdateBuffer();
 
@@ -23,27 +24,39 @@ void Chunk::Update(double delta)
 		{
 			const Pixel& p = GetPixel(x, y);
 
-			if (p.updated || p.properties & Pixel::Properties::EMPTY || p.properties & Pixel::Properties::STATIC)
+			if (p.updated || p.properties == Properties::EMPTY || p.properties == Properties::STATIC)
 				continue;
 
-			int dy = p.properties & Pixel::Properties::MOVE_DOWN ? 1 : -1;
+			int dy = p.properties & Properties::MOVE_DOWN ? 1 : -1;
 			int dx = (rand() % 2) * 2 - 1;
 
-			if (p.properties & Pixel::Properties::MOVE_DOWN && IsEmpty(x, y + 1))
+			if (dy != 0 && IsEmpty(x, y + dy))
 			{
-				MovePixel(x, y, x, y + 1);
+				MovePixel(x, y, x, y + dy);
 			}
-			else if (p.properties & Pixel::Properties::MOVE_UP && IsEmpty(x, y - 1))
+			else if (p.properties & Properties::MOVE_DIAGONAL)
 			{
-				MovePixel(x, y, x, y - 1);
+				if (IsEmpty(x + dx, y + dy))
+					MovePixel(x, y, x + dx, y + dy);
+				else
+				{
+					dx *= -1;
+
+					if (IsEmpty(x + dx, y + dy))
+						MovePixel(x, y, x + dx, y + dy);
+				}
 			}
-			else if (p.properties & Pixel::Properties::MOVE_DIAGONAL && IsEmpty(x + dx, y + dy))
+			else if (p.properties & Properties::MOVE_SIDE)
 			{
-				MovePixel(x, y, x + dx, y + dy);
-			}
-			else if (p.properties & Pixel::Properties::MOVE_SIDE && IsEmpty(x + dx, y))
-			{
-				MovePixel(x, y, x + dx, y);
+				if (IsEmpty(x + dx, y))
+					MovePixel(x, y, x + dx, y);
+				else
+				{
+					dx *= -1;
+
+					if (IsEmpty(x + dx, y))
+						MovePixel(x, y, x + dx, y);
+				}
 			}
 		}
 }
@@ -71,9 +84,11 @@ void Chunk::MovePixel(int x, int y, int xto, int yto)
 	}
 	else
 	{
-		if (Chunk* dst = GetNeighbour(xto, yto))
+		Vector2i world_to = { xto + position.x , yto + position.y };
+
+		if (Chunk* dst = GetNeighbour(world_to.x, world_to.y))
 		{
-			Vector2i to = dst->GetPixelChunkCoords(xto, yto);
+			Vector2i to = dst->GetPixelChunkCoords(world_to.x, world_to.y);
 
 			const Pixel& current = GetPixel(x, y);
 			const Pixel& destination = dst->GetPixel(to.x, to.y);
@@ -104,7 +119,7 @@ void Chunk::SetNeighbour(Chunk* neighbour)
 {
 	if (neighbour != nullptr)
 	{
-		Vector2i position = { SDL_floor(neighbour->position.x / size), SDL_floor(neighbour->position.y / size) };
+		Vector2i position = { floor(static_cast<float>(neighbour->position.x) / size), floor(static_cast<float>(neighbour->position.y) / size) };
 		lookup.insert({ position, neighbour });
 		neighbours.push_back(neighbour);
 	}
@@ -112,7 +127,7 @@ void Chunk::SetNeighbour(Chunk* neighbour)
 
 Chunk* Chunk::GetNeighbour(int x, int y)
 {
-	Vector2i position = { SDL_floor(x / size), SDL_floor(y / size) };;
+	Vector2i position = { floor(static_cast<float>(x) / size), floor(static_cast<float>(y) / size) };
 
 	auto itr = lookup.find(position);
 	auto end = lookup.end();
@@ -125,12 +140,16 @@ Chunk* Chunk::GetNeighbour(int x, int y)
 bool Chunk::IsEmpty(int x, int y)
 {
 	if (InBounds(x, y))
-		return GetPixel(x, y).properties == Pixel::Properties::EMPTY;
-	
-	if (Chunk* dst = GetNeighbour(x, y))
 	{
-		Vector2i to = dst->GetPixelChunkCoords(x, y);
-		return dst->GetPixel(to.x, to.y).properties == Pixel::Properties::EMPTY;
+		return GetPixel(x, y).properties == Properties::EMPTY;
+	}
+
+	Vector2i world_position = { x + position.x , y + position.y };
+
+	if (Chunk* dst = GetNeighbour(world_position.x, world_position.y))
+	{
+		Vector2i to = dst->GetPixelChunkCoords(world_position.x, world_position.y);
+		return dst->GetPixel(to.x, to.y).properties == Properties::EMPTY;
 	}
 
 	return false;
@@ -138,7 +157,7 @@ bool Chunk::IsEmpty(int x, int y)
 
 bool Chunk::InBounds(int x, int y)
 {
-	return x >= 0 && y >= 0 && x < size && y < size;
+	return x >= 0 && x < size && y >= 0 && y < size;
 }
 
 void Chunk::ClearUpdateBuffer()

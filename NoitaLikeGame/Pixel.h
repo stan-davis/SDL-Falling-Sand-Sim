@@ -1,17 +1,27 @@
 #pragma once
 
+enum class Properties : unsigned char
+{
+	EMPTY = 0b00000000,
+	STATIC = 0b00000010,
+	MOVE_DOWN = 0b00000100,
+	MOVE_UP = 0b00001000,
+	MOVE_DIAGONAL = 0b00010000,
+	MOVE_SIDE = 0b00100000,
+};
+
+inline Properties operator|(Properties a, Properties b)
+{
+	return Properties(static_cast<unsigned char>(a) | static_cast<unsigned char>(b));
+}
+
+inline auto operator&(Properties a, Properties b)
+{
+	return static_cast<unsigned char>(a) & static_cast<unsigned char>(b);
+}
+
 struct Pixel
 {
-	enum Properties
-	{
-		EMPTY			= 0b00000000,
-		STATIC			= 0b00000010,
-		MOVE_DOWN		= 0b00000100,
-		MOVE_UP			= 0b00001000,
-		MOVE_DIAGONAL	= 0b00010000,
-		MOVE_SIDE		= 0b00100000,
-	};
-
 	struct Color
 	{
 		unsigned char r;
@@ -19,7 +29,7 @@ struct Pixel
 		unsigned char b;
 	};
 
-	unsigned char properties = Properties::EMPTY;
+	Properties properties = Properties::EMPTY;
 	Color color = {0,0,0};
 	bool updated = false;
 
