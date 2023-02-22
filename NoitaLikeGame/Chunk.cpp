@@ -14,8 +14,6 @@ Chunk::Chunk(Vector2i offset) : position({ offset.x * size, offset.y * size})
 
 void Chunk::Update(double delta)
 {
-	Sand sand;
-	SetPixel(sand, 40, 50);
 
 	ClearUpdateBuffer();
 
@@ -117,12 +115,12 @@ Vector2i Chunk::GetPixelChunkCoords(int x, int y)
 
 void Chunk::SetNeighbour(Chunk* neighbour)
 {
-	if (neighbour != nullptr)
-	{
-		Vector2i position = { floor(static_cast<float>(neighbour->position.x) / size), floor(static_cast<float>(neighbour->position.y) / size) };
-		lookup.insert({ position, neighbour });
-		neighbours.push_back(neighbour);
-	}
+	if (neighbour == nullptr)
+		return;
+
+	Vector2i position = { floor(static_cast<float>(neighbour->position.x) / size), floor(static_cast<float>(neighbour->position.y) / size) };
+	lookup.insert({ position, neighbour });
+	neighbours.push_back(neighbour);
 }
 
 Chunk* Chunk::GetNeighbour(int x, int y)

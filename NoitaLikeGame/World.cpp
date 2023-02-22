@@ -70,7 +70,7 @@ void World::SetChunkNeighbours()
 		for(int x = world_position.x - 1; x <= world_position.x + 1; x++)
 			for (int y = world_position.y - 1; y <= world_position.y + 1; y++)
 			{
-				if (x == 0 && y == 0)
+				if (x == world_position.x && y == world_position.y)
 					continue;
 				
 				chunk->SetNeighbour(GetChunk(x, y));
