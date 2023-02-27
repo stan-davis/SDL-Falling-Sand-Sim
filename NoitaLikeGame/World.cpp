@@ -1,5 +1,4 @@
 #include "World.h"
-#include <iostream>
 
 World::World()
 {
@@ -75,5 +74,18 @@ void World::SetChunkNeighbours()
 				
 				chunk->SetNeighbour(GetChunk(x, y));
 			}
+	}
+}
+
+void World::SetPixel(const Pixel& p, int x, int y)
+{
+	int cx = floor(static_cast<float>(x) / Chunk::size);
+	int cy = floor(static_cast<float>(y) / Chunk::size);
+
+	if (Chunk* chunk = GetChunk(cx, cy))
+	{
+		int offset_x = x - chunk->position.x;
+		int offset_y = y - chunk->position.y;
+		chunk->SetPixel(p, offset_x, offset_y);
 	}
 }

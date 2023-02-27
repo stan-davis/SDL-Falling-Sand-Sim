@@ -1,62 +1,52 @@
 #include "Chunk.h"
 #include <iostream>
 
-Chunk::Chunk(Vector2i offset) : position({ offset.x * size, offset.y * size})
+Chunk::Chunk(Vector2i offset) : position({ offset.x * size, offset.y * size })
 {
-	//Set up pixel array
-	Pixel empty;
+	Tile ship = Tile({50,50}, b2_dynamicBody, world);
 
-	for (int i = 0; i < area; i ++)
+	ship.data =
 	{
-		pixels.push_back(empty);
-	}
-}
+					  {2,6},
+			   {1,5}, {2,5},
+		{0,4}, {1,4}, {2,4}, {3,4},
+		{0,3}, {1,3}, {2,3}, {3,3},
+		{0,2},               {3,2},
+		{0,1},               {3,1},
+		{0,0},               {3,0},
+	};
+
+
+	Tile base = Tile({ 47,100 }, b2_staticBody, world);
+
+	base.data =
+	{
+		{0,0},{1,0},{2,0},{3,0},{4,0},{5,0},{6,0},{7,0},{8,0},{9,0},
+	};
+
+	tiles.push_back(ship);
+	tiles.push_back(base);
+};
 
 void Chunk::Update(double delta)
 {
-
 	ClearUpdateBuffer();
 
+	/*Particle Sim*/
+	for (auto& tile : tiles)
+	{
+		tile.Update();
+		UpdateTile(tile, Rock());
+	}
+	
 	for (int x = 0; x < size; x++)
 		for (int y = 0; y < size; y++)
 		{
-			const Pixel& p = GetPixel(x, y);
-
-			if (p.updated || p.properties == Properties::EMPTY || p.properties == Properties::STATIC)
-				continue;
-
-			int dy = p.properties & Properties::MOVE_DOWN ? 1 : -1;
-			int dx = (rand() % 2) * 2 - 1;
-
-			if (dy != 0 && IsEmpty(x, y + dy))
-			{
-				MovePixel(x, y, x, y + dy);
-			}
-			else if (p.properties & Properties::MOVE_DIAGONAL)
-			{
-				if (IsEmpty(x + dx, y + dy))
-					MovePixel(x, y, x + dx, y + dy);
-				else
-				{
-					dx *= -1;
-
-					if (IsEmpty(x + dx, y + dy))
-						MovePixel(x, y, x + dx, y + dy);
-				}
-			}
-			else if (p.properties & Properties::MOVE_SIDE)
-			{
-				if (IsEmpty(x + dx, y))
-					MovePixel(x, y, x + dx, y);
-				else
-				{
-					dx *= -1;
-
-					if (IsEmpty(x + dx, y))
-						MovePixel(x, y, x + dx, y);
-				}
-			}
+			UpdateCell(x, y);
 		}
+
+	/*Physics Sim*/
+	world.Step(delta, 6, 2);
 }
 
 void Chunk::Draw(Graphics* graphics)
@@ -64,10 +54,71 @@ void Chunk::Draw(Graphics* graphics)
 	for (int x = 0; x < size; x++)
 		for (int y = 0; y < size; y++)
 		{
-			const Pixel::Color& c = GetPixel(x, y).color;
-			SDL_Color color = { c.r, c.g, c.b };
-			graphics->Draw(color, position.x + x, position.y + y);
+			const Pixel& p = GetPixel(x, y);
+
+			if (p.properties == Properties::EMPTY)
+				continue;
+
+			graphics->Draw(p.color, position.x + x, position.y + y);
 		}
+
+	for (auto& tile : tiles)
+		UpdateTile(tile, Pixel());
+}
+
+void Chunk::UpdateCell(int x, int y)
+{
+	const Pixel& p = GetPixel(x, y);
+
+	if (p.updated || p.properties == Properties::EMPTY || p.properties == Properties::STATIC)
+		return;
+
+	int dy = p.properties & Properties::MOVE_DOWN ? 1 : -1;
+	int dx = (rand() % 2) * 2 - 1;
+
+	for (int ry = p.vy; ry > 0; --ry)
+		for (int rx = p.vx; rx > 0; --rx)
+		{
+			if (dy != 0 && IsEmpty(x, y + (dy * ry)))
+			{
+				MovePixel(x, y, x, y + (dy * ry));
+				return;
+			}
+			else if (p.properties & Properties::MOVE_DIAGONAL && IsEmpty(x + (dx * rx), y + (dy * ry)))
+			{
+				MovePixel(x, y, x + (dx * rx), y + (dy * ry));
+				return;
+			}
+			else if (p.properties & Properties::MOVE_DIAGONAL && IsEmpty(x + -(dx * rx), y + (dy * ry)))
+			{
+				MovePixel(x, y, x + -(dx * rx), y + (dy * ry));
+				return;
+			}
+			else if (p.properties & Properties::MOVE_SIDE && IsEmpty(x + (dx * rx), y))
+			{
+				MovePixel(x, y, x + (dx * rx), y);
+				return;
+			}
+			else if (p.properties & Properties::MOVE_SIDE && IsEmpty(x + -(dx * rx), y))
+			{
+				MovePixel(x, y, x + -(dx * rx), y);
+				return;
+			}
+		}
+}
+
+void Chunk::UpdateTile(Tile& tile, const Pixel& p)
+{
+	for (auto pos : tile.data)
+	{
+		Vector2 n = { static_cast<float>(pos.x), static_cast<float>(pos.y) };
+		tile.transform.Forward(n, n);
+		pos.x = static_cast<int>(n.x);
+		pos.y = static_cast<int>(n.y);
+
+		if (InBounds(pos.x, pos.y))
+			SetPixel(p, pos.x, pos.y);
+	}
 }
 
 void Chunk::MovePixel(int x, int y, int xto, int yto)
@@ -118,14 +169,14 @@ void Chunk::SetNeighbour(Chunk* neighbour)
 	if (neighbour == nullptr)
 		return;
 
-	Vector2i position = { floor(static_cast<float>(neighbour->position.x) / size), floor(static_cast<float>(neighbour->position.y) / size) };
+	Vector2i position = Vector2i(floor(static_cast<float>(neighbour->position.x) / size), floor(static_cast<float>(neighbour->position.y) / size));
 	lookup.insert({ position, neighbour });
 	neighbours.push_back(neighbour);
 }
 
 Chunk* Chunk::GetNeighbour(int x, int y)
 {
-	Vector2i position = { floor(static_cast<float>(x) / size), floor(static_cast<float>(y) / size) };
+	Vector2i position = Vector2i(floor(static_cast<float>(x) / size), floor(static_cast<float>(y) / size));
 
 	auto itr = lookup.find(position);
 	auto end = lookup.end();

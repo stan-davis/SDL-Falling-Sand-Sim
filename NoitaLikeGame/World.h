@@ -9,9 +9,11 @@ public:
 
 	void Update(double delta);
 	void Draw(Graphics* graphics);
+
+	void SetPixel(const Pixel& p, int x, int y);
+	Chunk* GetChunk(int x, int y);
 private:
 	Chunk* CreateChunk(int x, int y);
-	Chunk* GetChunk(int x, int y);
 	void SetChunkNeighbours();
 
 	const int size = 2;

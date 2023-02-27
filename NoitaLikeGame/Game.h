@@ -1,30 +1,29 @@
 #pragma once
-#include <SDL.h>
-#include <memory>
+#include "Engine.h"
 #include "World.h"
-#include "Graphics.h"
+#include "Input.h"
 
-class Game
+class Game : public Engine
 {
 public:
 	Game() = default;
-	~Game() = default;
+	~Game();
 
-	int init(int width, int height, const char* title);
 private:
-	//Engine
-	int run();
-	void processEvents();
-	void update(double delta);
-	void render();
+	//Engine override
+	void Ready() override;
+	void Update(double delta) override;
+	void Render() override;
 
-	SDL_Window* window = NULL;
-	SDL_Renderer* renderer = NULL;
-	
-	bool quit = false;
-
-	//World
-	Graphics* graphics;
+	//Game
 	World* world;
+	Vector2 player_position;
+
+	//Drawing Pixels
+	void DrawBrush(const Pixel& pixel, int brush_size);
+	std::vector<Pixel> brush_type{ Rock(), Sand(), Water()};
+	int brush_type_counter = 0;
+
+	float angle = 0;
 };
 

@@ -1,72 +1,38 @@
 #include "Game.h"
+#include <iostream>
 
-int Game::init(int width, int height, const char* title)
+Game::~Game()
 {
-    //SDL init
-    SDL_Init(SDL_INIT_VIDEO);
-
-    window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, 0);
-    if (window == NULL) return -1;
-
-    renderer = SDL_CreateRenderer(window, NULL, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (renderer == NULL) return -1;
-
-    graphics = new Graphics(renderer, width, height);
-    world = new World();
-
-    //Run
-    return run();
+	delete world;
 }
 
-int Game::run()
+void Game::Ready()
 {
-    Uint64 current_time = SDL_GetPerformanceCounter();
-    Uint64 previous_time = 0;
-    double delta_time = 0;
-    
-    //Game Loop
-    while (!quit)
-    {
-        previous_time = current_time;
-        current_time = SDL_GetPerformanceCounter();
-        delta_time = static_cast<double>(current_time - previous_time) * 1000 / static_cast<double>(SDL_GetPerformanceFrequency());
-
-        processEvents();
-        update(delta_time);
-        render();
-    }
-
-    delete world;
-    delete graphics;
-
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-
-    return 0;
+	world = new World();
 }
 
-void Game::processEvents()
+void Game::Update(double delta)
 {
-    SDL_Event event;
+	if (GetInput()->IsKeyPressed(SDL_SCANCODE_UP))
+		brush_type_counter = (brush_type_counter + 1) % brush_type.size();
 
-    while (SDL_PollEvent(&event))
-    {
-        if (event.type == SDL_QUIT)
-            quit = true;
-    }
+	if (GetInput()->IsKeyPressed(SDL_SCANCODE_DOWN))
+		brush_type_counter = (brush_type_counter + (brush_type.size() - 1)) % brush_type.size();
+
+	if (GetInput()->IsMouseButtonHeld(Input::BUTTON_LEFT)) DrawBrush(brush_type[brush_type_counter], 2);
+	if (GetInput()->IsMouseButtonHeld(Input::BUTTON_RIGHT)) DrawBrush(Pixel(), 2);
+
+	world->Update(delta);
 }
 
-void Game::update(double delta)
+void Game::Render()
 {
-    world->Update(delta);
+	world->Draw(GetGraphics());
 }
 
-void Game::render()
+void Game::DrawBrush(const Pixel& pixel, int brush_size)
 {
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
-    world->Draw(graphics);
-    graphics->Render();
-    SDL_RenderPresent(renderer);
+	for (int x = GetInput()->GetMousePosition().x - brush_size; x <= GetInput()->GetMousePosition().x + brush_size; x++)
+		for (int y = GetInput()->GetMousePosition().y - brush_size; y <= GetInput()->GetMousePosition().y + brush_size; y++)
+			world->SetPixel(pixel, x, y);
 }
