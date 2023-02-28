@@ -9,8 +9,10 @@ public:
 	~Graphics() = default;
 
 	void Render();
+	SDL_Renderer* GetRenderer() { return renderer; }
 
 	void Draw(const SDL_Color& color, int x, int y);
+
 	void SetCameraPosition(const Vector2i& position);
 
 private:

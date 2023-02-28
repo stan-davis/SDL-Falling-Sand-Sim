@@ -3,7 +3,10 @@
 
 Chunk::Chunk(Vector2i offset) : position({ offset.x * size, offset.y * size })
 {
-	Tile ship = Tile({50,50}, b2_dynamicBody, world);
+	b2PolygonShape s_ship;
+	s_ship.SetAsBox(1, 1);
+
+	Tile ship = Tile({55,50}, b2_dynamicBody, s_ship, world);
 
 	ship.data =
 	{
@@ -16,8 +19,10 @@ Chunk::Chunk(Vector2i offset) : position({ offset.x * size, offset.y * size })
 		{0,0},               {3,0},
 	};
 
+	b2PolygonShape s_base;
+	s_base.SetAsBox(9, 5);
 
-	Tile base = Tile({ 47,100 }, b2_staticBody, world);
+	Tile base = Tile({ 47,100 }, b2_staticBody, s_base, world);
 
 	base.data =
 	{
@@ -33,12 +38,6 @@ void Chunk::Update(double delta)
 	ClearUpdateBuffer();
 
 	/*Particle Sim*/
-	for (auto& tile : tiles)
-	{
-		tile.Update();
-		UpdateTile(tile, Rock());
-	}
-	
 	for (int x = 0; x < size; x++)
 		for (int y = 0; y < size; y++)
 		{
@@ -47,6 +46,9 @@ void Chunk::Update(double delta)
 
 	/*Physics Sim*/
 	world.Step(delta, 6, 2);
+
+	for (auto& tile : tiles)
+		UpdateTile(tile, Rock());
 }
 
 void Chunk::Draw(Graphics* graphics)
@@ -111,10 +113,16 @@ void Chunk::UpdateTile(Tile& tile, const Pixel& p)
 {
 	for (auto pos : tile.data)
 	{
-		Vector2 n = { static_cast<float>(pos.x), static_cast<float>(pos.y) };
-		tile.transform.Forward(n, n);
-		pos.x = static_cast<int>(n.x);
-		pos.y = static_cast<int>(n.y);
+		/*Rotate & Translate*/
+		float a = tile.body->GetAngle();
+		float c = cosf(a);
+		float s = sinf(a);
+
+		int rx = pos.x * c + pos.y * s;
+		int ry = pos.y * c - pos.x * s;
+
+		pos.x = rx + tile.body->GetPosition().x;
+		pos.y = ry + tile.body->GetPosition().y;
 
 		if (InBounds(pos.x, pos.y))
 			SetPixel(p, pos.x, pos.y);

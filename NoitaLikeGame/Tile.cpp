@@ -1,28 +1,19 @@
 #include "Tile.h"
 
-Tile::Tile(Vector2 position, b2BodyType type, b2World& world)
+Tile::Tile(Vector2 position, b2BodyType type, b2Shape& shape, b2World& world)
 {
-	b2BodyDef def;
-	def.type = type;
-	def.position.Set(transform.GetOrigin().x, transform.GetOrigin().y);
+	/*Create Rigidbody*/
+	b2BodyDef body_def;
+	body_def.type = type;
+	body_def.position.Set(position.x, position.y);
+	body_def.angle = 0;
 
-	b2PolygonShape box;
-	box.SetAsBox(1, 1);
+	body = world.CreateBody(&body_def);
 
-	b2FixtureDef fixture;
-	fixture.shape = &box;
-	fixture.density = 1;
-	fixture.friction = 0.3f;
-
-	body = world.CreateBody(&def);
-	body->CreateFixture(&fixture);
-
-	transform.Translate(position);
-}
-
-void Tile::Update()
-{
-	/*Update Physics*/
-	transform.Translate({ body->GetPosition().x, body->GetPosition().y });
-	transform.Rotate(body->GetAngle());
+	b2FixtureDef fixture_def;
+	fixture_def.shape = &shape;
+	fixture_def.density = 1;
+	fixture_def.friction = 0.3f;
+	
+	body->CreateFixture(&fixture_def);
 }

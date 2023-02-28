@@ -6,13 +6,10 @@
 class Tile
 {
 public:
-	Tile(Vector2 position, b2BodyType type, b2World& world);
+	Tile(Vector2 position, b2BodyType type, b2Shape& shape, b2World& world);
 	~Tile() = default;
 
-	void Update();
-
 	std::vector<Vector2i> data;
-	Transform transform;
 	b2Body* body = nullptr;
 };
 
