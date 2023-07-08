@@ -28,8 +28,8 @@ private:
 	//Init
 	SDL_Window* window = NULL;
 	SDL_Renderer* renderer = NULL;
-	Graphics* graphics = nullptr;
-	Input* input;
+	Graphics* graphics = NULL;
+	Input* input = NULL;
 	
 	bool quit = false;
 	int window_width = 0;

@@ -1,14 +1,9 @@
 #include "Game.h"
 #include <iostream>
 
-Game::~Game()
-{
-	delete world;
-}
-
 void Game::Ready()
 {
-	world = new World();
+	world = std::make_unique<World>();
 }
 
 void Game::Update(double delta)

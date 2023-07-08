@@ -3,11 +3,13 @@
 #include "World.h"
 #include "Input.h"
 
+#include <memory>
+
 class Game : public Engine
 {
 public:
 	Game() = default;
-	~Game();
+	~Game() = default;
 
 private:
 	//Engine override
@@ -16,7 +18,7 @@ private:
 	void Render() override;
 
 	//Game
-	World* world;
+	std::unique_ptr<World> world;
 	Vector2 player_position;
 
 	//Drawing Pixels

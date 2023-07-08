@@ -6,7 +6,7 @@ Chunk::Chunk(Vector2i offset) : position({ offset.x * size, offset.y * size })
 	b2PolygonShape s_ship;
 	s_ship.SetAsBox(1, 1);
 
-	Tile ship = Tile({55,50}, b2_dynamicBody, s_ship, world);
+	Tile ship = Tile({57,50}, b2_dynamicBody, s_ship, world);
 
 	ship.data =
 	{
@@ -47,7 +47,7 @@ void Chunk::Update(double delta)
 	/*Physics Sim*/
 	world.Step(delta, 6, 2);
 
-	for (auto& tile : tiles)
+	for (const auto& tile : tiles)
 		UpdateTile(tile, Rock());
 }
 
@@ -64,7 +64,7 @@ void Chunk::Draw(Graphics* graphics)
 			graphics->Draw(p.color, position.x + x, position.y + y);
 		}
 
-	for (auto& tile : tiles)
+	for (const auto& tile : tiles)
 		UpdateTile(tile, Pixel());
 }
 
@@ -109,7 +109,7 @@ void Chunk::UpdateCell(int x, int y)
 		}
 }
 
-void Chunk::UpdateTile(Tile& tile, const Pixel& p)
+void Chunk::UpdateTile(const Tile& tile, const Pixel& p)
 {
 	for (auto pos : tile.data)
 	{
