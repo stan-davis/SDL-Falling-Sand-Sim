@@ -1,5 +1,5 @@
 # Another Falling Sand Sim
-## Another falling pixel simulation written in C++ with SDL2 & Box2D
+## Another pixel simulation written in C++ with SDL2 & Box2D
 
 This project aims to create a falling pixel simulation alongside a rigidbody physics simulation of grouped pixels using Box2D.
 
